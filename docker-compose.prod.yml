@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fintech_backend_prod
+    ports:
+      - "${PORT}:${PORT}"
+    env_file:
+      - .env.prod
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_ACCESS_SECRET=${JWT_ACCESS_SECRET}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - JWT_ACCESS_EXPIRES_IN=${JWT_ACCESS_EXPIRES_IN}
+      - JWT_REFRESH_EXPIRES_IN=${JWT_REFRESH_EXPIRES_IN}
+      - FRONTEND_URL=${FRONTEND_URL}
+      - MAX_FILE_SIZE_MB=${MAX_FILE_SIZE_MB}
+      - UPLOAD_DIR=${UPLOAD_DIR}
+      - ML_SERVICE_URL=http://ml-service:8000
+      - RATE_LIMIT_WINDOW_MS=${RATE_LIMIT_WINDOW_MS}
+      - RATE_LIMIT_MAX_REQUESTS=${RATE_LIMIT_MAX_REQUESTS}
+      - AUTH_RATE_LIMIT_MAX=${AUTH_RATE_LIMIT_MAX}
+    volumes:
+      - uploads_volume:/app/uploads
+    depends_on:
+      ml-service:
+        condition: service_healthy
+    restart: always
+    networks:
+      - fintech_network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:${PORT}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  ml-service:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile
+    container_name: fintech_ml_service_prod
+    ports:
+      - "8000:8000"
+    restart: always
+    networks:
+      - fintech_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: fintech_frontend_prod
+    ports:
+      - "5173:5173"
+    env_file:
+      - .env.prod
+    environment:
+      - VITE_API_URL=${VITE_API_URL}
+    depends_on:
+      - backend
+    restart: always
+    networks:
+      - fintech_network
+
+volumes:
+  uploads_volume:
+    driver: local
+
+networks:
+  fintech_network:
+    driver: bridge
