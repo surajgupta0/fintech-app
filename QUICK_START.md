@@ -5,7 +5,7 @@
 ```
 You have:
 ✓ backend/       (Node.js API)
-✓ frontend/      (React UI)  
+✓ frontend/      (React UI)
 ✓ ml-service/    (Python)
 ✓ docker-compose.yml (all 3 services together)
 ✓ .env files
@@ -137,18 +137,18 @@ docker-compose -f docker-compose.prod.yml up -d
 
 ## 📋 Quick Commands Reference
 
-| Action | Command |
-|--------|---------|
-| **See changes** | `git status` |
-| **Add all changes** | `git add .` |
-| **Commit changes** | `git commit -m "message"` |
-| **Push to GitHub** | `git push origin main` |
-| **Pull latest** | `git pull origin main` |
-| **See commit history** | `git log --oneline` |
-| **Start services locally** | `docker-compose up -d` |
-| **Stop services** | `docker-compose down` |
-| **View logs** | `docker-compose logs -f backend` |
-| **Test in production** | `docker-compose -f docker-compose.prod.yml up -d` |
+| Action                     | Command                                           |
+| -------------------------- | ------------------------------------------------- |
+| **See changes**            | `git status`                                      |
+| **Add all changes**        | `git add .`                                       |
+| **Commit changes**         | `git commit -m "message"`                         |
+| **Push to GitHub**         | `git push origin main`                            |
+| **Pull latest**            | `git pull origin main`                            |
+| **See commit history**     | `git log --oneline`                               |
+| **Start services locally** | `docker-compose up -d`                            |
+| **Stop services**          | `docker-compose down`                             |
+| **View logs**              | `docker-compose logs -f backend`                  |
+| **Test in production**     | `docker-compose -f docker-compose.prod.yml up -d` |
 
 ---
 
@@ -157,16 +157,19 @@ docker-compose -f docker-compose.prod.yml up -d
 Run ONE of these commands and copy the output:
 
 ### Linux/Mac:
+
 ```bash
 openssl rand -hex 32
 ```
 
 ### Windows PowerShell:
+
 ```powershell
 [System.Convert]::ToBase64String((1..32 | ForEach-Object { [byte](Get-Random -Max 256) }))
 ```
 
 Use this value for both:
+
 - `JWT_ACCESS_SECRET`
 - `JWT_REFRESH_SECRET`
 
@@ -196,7 +199,9 @@ git push origin main
 ## ❓ Common Questions
 
 ### Q: Do I push backend, frontend, and ml-service separately?
+
 **A:** No! Push them all together in one commit:
+
 ```bash
 git add .  # This adds ALL changes from all 3 services
 git commit -m "message"
@@ -204,21 +209,27 @@ git push origin main
 ```
 
 ### Q: How often do I push?
+
 **A:** Whenever you want to deploy new changes. Push = Deploy (automatic).
 
 ### Q: Can I just push one service?
+
 **A:** Yes, but all 3 get redeployed anyway (because they're in same repo). That's normal.
 
 ### Q: Where do I set .env values?
-**A:** 
+
+**A:**
+
 - Local: Edit `.env` file
 - Cloud (Railway): Set in Railway dashboard UI
 - Cloud (Render): Set in render "Environment" tab
 
 ### Q: What if deployment fails?
+
 **A:** Check cloud platform's "Logs" section to see error
 
 ### Q: Do I need to push to deploy locally?
+
 **A:** No, just run `docker-compose up -d` to test locally without pushing
 
 ---
