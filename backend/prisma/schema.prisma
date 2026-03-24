@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  name          String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  uploads       Upload[]
+  transactions  Transaction[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  revoked   Boolean  @default(false)
+
+  @@map("refresh_tokens")
+}
+
+model Upload {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  filename     String
+  originalName String
+  rowCount     Int
+  status       UploadStatus  @default(PROCESSING)
+  errorMessage String?
+  createdAt    DateTime      @default(now())
+  transactions Transaction[]
+
+  @@map("uploads")
+}
+
+enum UploadStatus {
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Transaction {
+  id              String          @id @default(cuid())
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  uploadId        String
+  upload          Upload          @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+  date            DateTime
+  description     String
+  amount          Decimal         @db.Decimal(12, 2)
+  type            TransactionType
+  category        String
+  classifierLevel Int
+  confidence      Float           @default(0)
+  hash            String
+  createdAt       DateTime        @default(now())
+
+  @@unique([hash])
+  @@index([userId, date])
+  @@index([userId, category])
+  @@map("transactions")
+}
+
+enum TransactionType {
+  DEBIT
+  CREDIT
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String
+  keywords    String[]
+
+  @@map("categories")
+}
