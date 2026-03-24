@@ -3,10 +3,13 @@ FROM node:20-alpine
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
 COPY . .
 
-EXPOSE 5173
+RUN npm run build
+RUN npm install -g serve
 
-CMD ["npm", "run", "dev", "--", "--host"]
+EXPOSE 8080
+
+CMD ["sh", "-c", "serve -s dist -l ${PORT:-8080}"]
