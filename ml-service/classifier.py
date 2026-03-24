@@ -1,9 +1,6 @@
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
-import numpy as np
-
-# Load model at module level (cached)
-model = SentenceTransformer("all-MiniLM-L6-v2")
+import json
+import os
+from urllib import request, error
 
 CATEGORY_DESCRIPTIONS = {
     "Food": "food delivery order restaurant swiggy zomato meal eating dining grocery quick commerce",
@@ -17,21 +14,60 @@ CATEGORY_DESCRIPTIONS = {
     "Transfers": "transfer sent NEFT RTGS IMPS self account family UPI payment",
 }
 
+HF_ZERO_SHOT_URL = os.getenv(
+    "HF_ZERO_SHOT_URL",
+    "https://api-inference.huggingface.co/models/facebook/bart-large-mnli",
+)
+HF_API_TOKEN = os.getenv("HF_API_TOKEN", "")
+
 category_names = list(CATEGORY_DESCRIPTIONS.keys())
-category_vectors = model.encode(list(CATEGORY_DESCRIPTIONS.values()))
+
+
+def _call_hf_zero_shot(description: str) -> tuple[str, float]:
+    payload = {
+        "inputs": description,
+        "parameters": {
+            "candidate_labels": category_names,
+            "multi_label": False,
+        },
+        "options": {
+            "wait_for_model": True,
+        },
+    }
+
+    data = json.dumps(payload).encode("utf-8")
+    headers = {"Content-Type": "application/json"}
+
+    if HF_API_TOKEN:
+        headers["Authorization"] = f"Bearer {HF_API_TOKEN}"
+
+    req = request.Request(HF_ZERO_SHOT_URL, data=data, headers=headers, method="POST")
+
+    with request.urlopen(req, timeout=12) as resp:  # nosec B310
+        response_data = json.loads(resp.read().decode("utf-8"))
+
+    labels = response_data.get("labels") or []
+    scores = response_data.get("scores") or []
+
+    if not labels or not scores:
+        return "Uncategorized", 0.0
+
+    category = labels[0]
+    confidence = float(scores[0])
+    return category, confidence
 
 
 def classify_transaction(description: str) -> dict:
-    """Classify a transaction description using sentence-transformer embeddings."""
-    txn_vector = model.encode([description])
-    scores = cosine_similarity(txn_vector, category_vectors)[0]
-    best_index = int(np.argmax(scores))
-    best_score = float(scores[best_index])
+    """Classify a transaction description using Hugging Face zero-shot API."""
+    try:
+        category, confidence = _call_hf_zero_shot(description)
 
-    if best_score < 0.28:
+        if confidence < 0.30:
+            return {"category": "Uncategorized", "confidence": 0.0}
+
+        return {
+            "category": category,
+            "confidence": round(confidence, 4),
+        }
+    except (error.URLError, TimeoutError, ValueError, json.JSONDecodeError):
         return {"category": "Uncategorized", "confidence": 0.0}
-
-    return {
-        "category": category_names[best_index],
-        "confidence": round(best_score, 4),
-    }
