@@ -2,6 +2,12 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# 👇 Accept build arg
+ARG VITE_API_URL
+
+# 👇 Set env inside container
+ENV VITE_API_URL=$VITE_API_URL
+
 COPY package*.json ./
 RUN npm ci
 
