@@ -33,6 +33,8 @@ services:
   ml-service:
     build: ./ml-service
     container_name: fintech_ml_service
+    env_file:
+      - ./ml-service/.env
     ports:
       - "8000:8000"
     healthcheck:
