@@ -1,6 +1,17 @@
 #!/bin/bash
-# Railway deployment - this should not be reached when using Docker
-# If you see this, Railway is using buildpacks instead of Docker
+set -e
 
 echo "Starting Fintech App Backend..."
-cd backend && npm start
+
+if ! command -v npm >/dev/null 2>&1; then
+	echo "ERROR: npm not found in this runtime."
+	echo "This Railway service is not using a Node runtime for backend."
+	echo "Fix: Railway service -> Settings -> Root Directory = backend"
+	echo "Fix: Use Dockerfile builder (backend/Dockerfile) OR Node with npm start in backend"
+	exit 1
+fi
+
+cd backend
+npm ci
+npm run build
+npm start
